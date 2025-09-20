@@ -21,10 +21,10 @@ $role = $_SESSION['role']; // roles: staff, office_head, admin
             font-family: Arial, sans-serif; 
             margin: 20px; 
             background-color: #f4f8ff;
-            color: #d13c3cff;
+            color: #333;
         }
         h2 { 
-            color: #a10a0aff; 
+            color: #004aad; 
             text-align: center;
         }
         .nav { 
