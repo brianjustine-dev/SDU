@@ -20,35 +20,48 @@ $role = $_SESSION['role']; // roles: staff, office_head, admin
         body { 
             font-family: Arial, sans-serif; 
             margin: 20px; 
-            background-color: #f8f8f8;
+            background-color: #f4f8ff;
+            color: #333;
         }
         h2 { 
-            color: #800000; 
+            color: #000000ff; 
+            text-align: center;
         }
         .nav { 
-            margin-bottom: 20px; 
-            padding: 10px;
-            background: #eee;
-            border-radius: 6px;
+            margin: 20px auto;
+            padding: 15px;
+            background: #fff;
+            border: 1px solid #cce0ff;
+            border-radius: 8px;
+            width: 80%;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            text-align: center;
         }
         .nav a { 
-            margin-right: 15px; 
+            display: inline-block;
+            margin: 8px 12px;
+            padding: 10px 16px;
+            background: #004aad;
+            color: white; 
+            font-weight: bold;
+            border-radius: 6px;
             text-decoration: none; 
-            color: #800000; 
-            font-weight: bold; 
+            transition: background 0.2s ease-in-out;
         }
         .nav a:hover { 
-            text-decoration: underline; 
+            background: #00337a;
         }
         p { 
-            font-size: 14px;
+            font-size: 15px;
             color: #333;
+            text-align: center;
+            margin-top: 25px;
         }
     </style>
 </head>
 <body>
 
-<h2>Welcome, <?= htmlspecialchars($fullname) ?> (<?= ucfirst($role) ?>)</h2>
+<h2>Welcome, <?= htmlspecialchars($fullname) ?> (<?= ucfirst(htmlspecialchars($role)) ?>)</h2>
 
 <div class="nav">
     <a href="dashboard.php">🏠 Dashboard</a>
@@ -57,19 +70,16 @@ $role = $_SESSION['role']; // roles: staff, office_head, admin
     <?php if ($role == 'staff') { ?>
         <a href="profile.php">👤 My Profile</a>
         <a href="trainings.php">📘 My Trainings</a>
-        <a href="activities.php">📌 My Activities</a>
     <?php } ?>
 
     <?php if ($role == 'office_head') { ?>
         <a href="users.php">👥 Manage My Staff</a>
         <a href="trainings.php">📘 Staff Trainings</a>
-        <a href="activities.php">📌 Staff Activities</a>
     <?php } ?>
 
     <?php if ($role == 'admin') { ?>
         <a href="users.php">👥 Manage Users</a>
         <a href="trainings.php">📘 Manage Trainings</a>
-        <a href="activities.php">📌 Manage Activities</a>
         <a href="reports.php">📊 Reports</a>
     <?php } ?>
 </div>

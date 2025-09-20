@@ -7,7 +7,7 @@ if (!isset($_SESSION['user_id'])) {
     exit();
 }
 
-$id = $_GET['id'];
+$id = intval($_GET['id']);
 $user_id = $_SESSION['user_id'];
 
 $stmt = $conn->prepare("DELETE FROM trainings WHERE id=? AND user_id=?");
