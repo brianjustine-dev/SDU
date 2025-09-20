@@ -21,7 +21,7 @@ $role = $_SESSION['role']; // roles: staff, office_head, admin
             font-family: Arial, sans-serif; 
             margin: 20px; 
             background-color: #f4f8ff;
-            color: #333;
+            color: #d13c3cff;
         }
         h2 { 
             color: #a10a0aff; 
