@@ -24,7 +24,7 @@ $role = $_SESSION['role']; // roles: staff, office_head, admin
             color: #333;
         }
         h2 { 
-            color: #000000ff; 
+            color: #fd0000ff; 
             text-align: center;
         }
         .nav { 
