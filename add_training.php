@@ -2,29 +2,42 @@
 session_start();
 include("db.php");
 
-if (!isset($_SESSION['user_id'])) {
+// Check if the user is logged in and is staff or head
+if (!isset($_SESSION['user_id']) || !in_array($_SESSION['role'], ['staff', 'head'])) {
     header("Location: login.php");
     exit();
 }
 
-$error = "";
+$message = "";
+$user_id = $_SESSION['user_id'];
 
-if (isset($_POST['save'])) {
-    $training_name = trim($_POST['training_name']);
-    $training_date = $_POST['training_date'];
-    $user_id = $_SESSION['user_id'];
+// Handle form submission
+if ($_SERVER["REQUEST_METHOD"] == "POST") {
+    $title = $_POST['title'];
+    $description = $_POST['description'];
+    $completion_date = $_POST['completion_date'];
 
-    if (empty($training_name) || empty($training_date)) {
-        $error = "Please fill in all required fields.";
-    } elseif (!preg_match('/^\d{4}-\d{2}-\d{2}$/', $training_date)) {
-        $error = "Invalid date format.";
-    } else {
-        $stmt = $conn->prepare("INSERT INTO trainings (user_id, training_name, training_date) VALUES (?, ?, ?)");
-        $stmt->bind_param("iss", $user_id, $training_name, $training_date);
-        $stmt->execute();
+    // Use a transaction for safety
+    $conn->begin_transaction();
+    try {
+        // Step 1: Insert the training into the 'trainings' table
+        $stmt1 = $conn->prepare("INSERT INTO trainings (title, description, training_date) VALUES (?, ?, ?)");
+        $stmt1->bind_param("sss", $title, $description, $completion_date);
+        $stmt1->execute();
+        $training_id = $stmt1->insert_id;
+        $stmt1->close();
 
-        header("Location: trainings.php");
-        exit();
+        // Step 2: Link the user to the training in the 'user_trainings' table
+        $stmt2 = $conn->prepare("INSERT INTO user_trainings (user_id, training_id, completion_date) VALUES (?, ?, ?)");
+        $stmt2->bind_param("iis", $user_id, $training_id, $completion_date);
+        $stmt2->execute();
+        $stmt2->close();
+
+        $conn->commit();
+        $message = "<div class='alert alert-success'>Training added successfully!</div>";
+    } catch (Exception $e) {
+        $conn->rollback();
+        $message = "<div class='alert alert-danger'>Error: " . $e->getMessage() . "</div>";
     }
 }
 ?>
@@ -32,82 +45,41 @@ if (isset($_POST['save'])) {
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8">
-<title>Add Training</title>
-<style>
-    body {
-        font-family: Arial, sans-serif;
-        background-color: #f4f8ff;
-        margin: 0;
-        padding: 20px;
-        color: #333;
-    }
-    h2 {
-        color: #004aad;
-        text-align: center;
-    }
-    form {
-        width: 50%;
-        margin: 30px auto;
-        padding: 20px;
-        background: #fff;
-        border: 1px solid #cce0ff;
-        border-radius: 8px;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
-    }
-    label {
-        font-weight: bold;
-        color: #004aad;
-        display: block;
-        margin-bottom: 5px;
-    }
-    input[type="text"], input[type="date"] {
-        width: 100%;
-        padding: 10px;
-        margin-bottom: 15px;
-        border: 1px solid #cce0ff;
-        border-radius: 5px;
-    }
-    button {
-        background-color: #004aad;
-        color: white;
-        border: none;
-        padding: 10px 18px;
-        border-radius: 5px;
-        font-size: 14px;
-        cursor: pointer;
-    }
-    button:hover {
-        background-color: #00337a;
-    }
-    a {
-        display: inline-block;
-        margin-top: 15px;
-        text-decoration: none;
-        color: #004aad;
-        font-weight: bold;
-    }
-    a:hover {
-        text-decoration: underline;
-    }
-</style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Add Training</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body { font-family: 'Montserrat', sans-serif; background-color: #f0f2f5; }
+        .container { max-width: 600px; margin-top: 50px; }
+        .card { padding: 20px; box-shadow: 0 4px 8px rgba(0,0,0,0.1); }
+    </style>
 </head>
 <body>
-
-<h2>Add Training</h2>
-<form method="POST">
-    <label for="training_name">Training Name:</label>
-    <input type="text" id="training_name" name="training_name" required>
-
-    <label for="training_date">Training Date:</label>
-    <input type="date" id="training_date" name="training_date" required>
-
-    <button type="submit" name="save">Save</button>
-</form>
-
-<div style="text-align:center;">
-    <a href="trainings.php">Back</a>
-</div>
-
+    <div class="container">
+        <div class="card">
+            <h2 class="text-center mb-4">Add a New Training</h2>
+            <?php echo $message; ?>
+            <form action="add_training.php" method="POST">
+                <div class="mb-3">
+                    <label for="title" class="form-label">Training Title</label>
+                    <input type="text" class="form-control" id="title" name="title" required>
+                </div>
+                <div class="mb-3">
+                    <label for="description" class="form-label">Description</label>
+                    <textarea class="form-control" id="description" name="description" rows="3"></textarea>
+                </div>
+                <div class="mb-3">
+                    <label for="completion_date" class="form-label">Completion Date</label>
+                    <input type="date" class="form-control" id="completion_date" name="completion_date" required>
+                </div>
+                <button type="submit" class="btn btn-primary w-100">Add Training</button>
+            </form>
+            <div class="text-center mt-3">
+                <a href="staff_dashboard.php?view=training-records">Go back to Training Records</a>
+            </div>
+        </div>
+    </div>
 </body>
 </html>
