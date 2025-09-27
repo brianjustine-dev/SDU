@@ -1,8 +1,8 @@
 <?php
 $servername = "localhost";
-$username = "root"; // Your MySQL username
-$password = ""; // Your MySQL password
-$dbname = "sdu_system"; // The exact name of your database
+$username = "root"; 
+$password = ""; 
+$dbname = "sdu_system"; 
 
 // Create connection
 $conn = new mysqli($servername, $username, $password, $dbname);
@@ -11,4 +11,5 @@ $conn = new mysqli($servername, $username, $password, $dbname);
 if ($conn->connect_error) {
   die("Connection failed: " . $conn->connect_error);
 }
+
 ?>
