@@ -1,14 +1,14 @@
 <?php
-$host = "localhost";
-$user = "root";  
-$pass = "";      
-$dbname = "sdu_system"; 
+$servername = "localhost";
+$username = "root"; // Your MySQL username
+$password = ""; // Your MySQL password
+$dbname = "sdu_system"; // The exact name of your database
 
-$conn = new mysqli($host, $user, $pass, $dbname);
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
 
+// Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+  die("Connection failed: " . $conn->connect_error);
 }
-
-$conn->set_charset("utf8mb4");
 ?>
