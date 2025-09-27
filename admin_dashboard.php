@@ -8,7 +8,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
 }
 
 $view = isset($_GET['view']) ? $_GET['view'] : 'overview';
-$admin_username = $_SESSION['username']; // Get the username from the session
+$admin_username = $_SESSION['username']; // Get username from the session
 
 // Fetch summary data for the dashboard overview
 $total_staff = 0;
@@ -22,10 +22,6 @@ if ($result_total_staff) {
     $total_staff = $row['total'];
 }
 
-// Note: You'll need to create a 'trainings' table and link it to users
-// for this count to work. For now, it's a placeholder.
-// The code below is a simplified fix to prevent the "table doesn't exist" error.
-// For a full solution, you need to create the 'trainings' table.
 if ($conn->query("SHOW TABLES LIKE 'trainings'")->num_rows == 1) {
     $query_trainings = "SELECT COUNT(*) AS total FROM trainings";
     $result_trainings = $conn->query($query_trainings);
@@ -35,10 +31,7 @@ if ($conn->query("SHOW TABLES LIKE 'trainings'")->num_rows == 1) {
     }
 }
 
-
-// Similarly, you'll need a 'programs' or equivalent table
-// This is also a placeholder for now.
-$active_programs = 3; // Example static value
+$active_programs = 3; // Example static value, pwede pa to i change
 ?>
 
 <!DOCTYPE html>
@@ -78,57 +71,55 @@ body {
     }
 }
 
-/* Sidebar when toggled (collapsed) */
 body.toggled .sidebar-lg {
-    width: 80px; /* Reduced width for collapsed state */
+    width: 80px; 
     padding-top: 1rem;
     color: white; 
 }
 
 body.toggled .sidebar-lg .profile-pic {
-    display: none; /* Hide the entire profile-pic div */
+    display: none; 
 }
 
 body.toggled .sidebar-lg .nav-link {
-    text-align: center; /* Center icons in collapsed view */
+    text-align: center; 
     padding: 12px 0;
     color: white; 
 }
 
 body.toggled .sidebar-lg .nav-link i,
 body.toggled .sidebar-lg .nav-link span {
-    margin: 0; /* Remove any margin for icons */
+    margin: 0; 
     color: white;
 }
 
 body.toggled .sidebar-lg .nav-link span {
-    display: none; /* Hide text in collapsed view */
+    display: none; 
 }
 
 body.toggled .main-content {
-    margin-left: 80px; /* New margin to align with collapsed sidebar */
+    margin-left: 80px; 
 }
 
-/* Also, ensure the toggle button for desktop sidebar is positioned correctly */
 .sidebar-lg .sidebar-toggle-btn {
     background-color: transparent;
     border: none;
-    color: white; /* Or any color you prefer for the icon */
+    color: white; 
     font-size: 1.5rem;
     padding: 10px;
     width: 100%;
-    text-align: right; /* Align to right for better appearance */
+    text-align: right; 
 }
 
 /* Style for the sidebar header */
 .sidebar-lg .sidebar-header {
-    padding: 0 15px; /* Adjust padding as needed */
-    height: 60px; /* Or match your desired height */
+    padding: 0 15px; 
+    height: 60px; 
     display: flex;
     color: white; 
     align-items: center;
     justify-content: space-between;
-    margin-bottom: 2rem; /* Add margin below the header */
+    margin-bottom: 2rem; 
 }
 
 .sidebar-lg .sidebar-header h5 {
@@ -138,25 +129,22 @@ body.toggled .main-content {
     transition: opacity 0.3s ease-in-out;
 }
 
-/* Hide header text when toggled */
 body.toggled .sidebar-lg .sidebar-header h5 {
-    display: none; /* Hide the text */
+    display: none; 
 }
 
-/* Adjust toggle button when sidebar is collapsed */
+
 body.toggled .sidebar-lg .sidebar-toggle-btn {
-    text-align: center; /* Center the icon */
-    padding: 10px 0; /* Adjust padding */
+    text-align: center; 
+    padding: 10px 0; 
 }
 
-/* Adjust main-content margin when sidebar is toggled (collapsed) */
 body.toggled .main-content {
     margin-left: 80px;
 }
 
-/* Ensure the profile pic and text are hidden when toggled */
 body.toggled .profile-pic {
-    display: none !important; /* Use !important if other rules override */
+    display: none !important; 
 }
 
 
@@ -382,3 +370,4 @@ th {
     </script>
 </body>
 </html>
+
