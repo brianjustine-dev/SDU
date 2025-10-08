@@ -1,14 +1,15 @@
 <?php
-$host = "localhost";
-$user = "root";  
-$pass = "";      
+$servername = "localhost";
+$username = "root"; 
+$password = ""; 
 $dbname = "sdu_system"; 
 
-$conn = new mysqli($host, $user, $pass, $dbname);
+// Create connection
+$conn = new mysqli($servername, $username, $password, $dbname);
 
+// Check connection
 if ($conn->connect_error) {
-    die("Connection failed: " . $conn->connect_error);
+  die("Connection failed: " . $conn->connect_error);
 }
 
-$conn->set_charset("utf8mb4");
 ?>

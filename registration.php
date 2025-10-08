@@ -1,42 +1,58 @@
-<?php 
+<?php
 session_start();
 include("db.php");
 
 $error = "";
+$success = "";
 
-if (isset($_POST['submit'])) {
-    $fullName = trim($_POST['fullName']);
-    $email = trim($_POST['email']);
-    $password = $_POST['password'];
-    $confirmPassword = $_POST['confirmPassword'];
-    $role = $_POST['role']; // admin, office_head, staff
+if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+    if (isset($_POST['role']) && isset($_POST['username']) && isset($_POST['email']) && isset($_POST['password'])) {
+        $role = trim($_POST['role']);
+        $username = trim($_POST['username']);
+        $email = trim($_POST['email']);
+        $password = $_POST['password'];
 
-    if ($password !== $confirmPassword) {
-        $error = "Passwords do not match.";
-    } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
-        $error = "Invalid email format.";
-    } else {
-        $hashedPassword = password_hash($password, PASSWORD_DEFAULT);
-
-        $sql = $conn->prepare("SELECT * FROM users WHERE email = ?");
-        $sql->bind_param("s", $email);
-        $sql->execute();
-        $result = $sql->get_result();
-
-        if ($result->num_rows > 0) {
-            $error = "This email is already registered. Please log in.";
+        if (empty($role) || empty($username) || empty($email) || empty($password)) {
+            $error = "All fields are required.";
+        } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            $error = "Invalid email format.";
         } else {
-            $sql = $conn->prepare("INSERT INTO users(fullname, email, password, role) VALUES (?, ?, ?, ?)");
-            $sql->bind_param("ssss", $fullName, $email, $hashedPassword, $role);
+            // Check if email already exists
+            $query_check = "SELECT id FROM users WHERE email = ?";
+            $stmt_check = $conn->prepare($query_check);
+            $stmt_check->bind_param("s", $email);
+            $stmt_check->execute();
+            $result_check = $stmt_check->get_result();
 
-            if ($sql->execute()) {
-                header("Location: login.php?registered=true");
-                exit();
+            if ($result_check->num_rows > 0) {
+                $error = "Email already registered!";
             } else {
-                $error = "Registration failed. Please try again.";
+                // Hash the password for security
+                $hashed_password = password_hash($password, PASSWORD_DEFAULT);
+
+                // Insert new user into the database
+                $query_insert = "INSERT INTO users (username, email, password, role) VALUES (?, ?, ?, ?)";
+                $stmt_insert = $conn->prepare($query_insert);
+
+                if ($stmt_insert) {
+                    $stmt_insert->bind_param("ssss", $username, $email, $hashed_password, $role);
+                    if ($stmt_insert->execute()) {
+                        // Registration successful, set a success message and redirect
+                        $_SESSION['registration_success'] = "Registration successful! You can now sign in.";
+                        header("Location: login.php");
+                        exit();
+                    } else {
+                        $error = "Registration failed. Please try again.";
+                    }
+                    $stmt_insert->close();
+                } else {
+                    $error = "Database query failed.";
+                }
             }
-            $sql->close();
+            $stmt_check->close();
         }
+    } else {
+        $error = "Please fill in all the required fields.";
     }
 }
 ?>
@@ -45,121 +61,292 @@ if (isset($_POST['submit'])) {
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>Register</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            background: #f0f6ff;
-            margin: 0;
-            padding: 0;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-        }
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDU - Register</title>
+    <style> 
 
-        .container {
-            background: #fff;
-            padding: 30px 40px;
-            border-radius: 10px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-            max-width: 400px;
-            width: 100%;
-        }
+    @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;700&display=swap');
+    body {
+        font-family: 'Montserrat', sans-serif;
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        background-color: #f0f2f5;
+    }
 
-        h2 {
-            text-align: center;
-            color: #0056b3;
-            margin-bottom: 20px;
-        }
+    .registration-container {
+        display: flex;
+        flex-direction: row-reverse; /* This flips the order of the columns */
+        width: 100%;
+        max-width: 1000px;
+        height: 100vh;
+        max-height: 600px;
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+    }
 
-        label {
-            display: block;
-            margin: 12px 0 5px;
-            font-weight: bold;
-            color: #333;
-        }
+    .registration-right {
+        background-color: white;
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 20px;
+    }
 
-        input, select {
-            width: 100%;
-            padding: 10px;
-            border-radius: 6px;
-            border: 1px solid #ccc;
+    .registration-left {
+        background-color: #1a237e;
+        color: white;
+        flex: 1;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        text-align: center;
+        padding: 20px;
+    }
+
+    .registration-left h1 {
+            font-size: 3rem;
+            font-weight: 700;
             margin-bottom: 10px;
-            font-size: 14px;
+            text-align: left; 
+            padding-left: 20px;
+    }
+    
+    .registration-form-box {
+        width: 100%;
+        max-width: 400px;
+    }
+
+    .registration-form-box h2 {
+        font-size: 1.8rem;
+        font-weight: 700;
+        color: #1a237e;
+        border-bottom: 3px solid #1a237e;
+        padding-bottom: 5px;
+        margin-bottom: 25px;
+    }
+
+    .registration-form-box p {
+        color: #6c757d;
+        margin-bottom: 20px;
+    }
+
+    /* Styling for the role selection buttons */
+.role-selection {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.role-selection input[type="radio"] {
+    /* Hides the default radio button */
+    display: none;
+}
+
+.role-selection label {
+    flex: 1;
+    text-align: center;
+    padding: 10px;
+    border: 1px solid #ced4da;
+    cursor: pointer;
+    font-weight: bold;
+    color: #495057;
+    transition: background-color 0.2s ease-in-out, border-color 0.2s ease-in-out;
+    font-size: 0.8rem;
+}
+
+.role-selection input[type="radio"]:checked + label {
+    /* Styles the label when the radio button is checked */
+    background-color: #1a237e;
+    color: white;
+    border-color: #1a237e;
+}
+
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        font-size: 0.8rem;
+        font-weight: 700;
+        color: #495057;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }
+
+    .input-with-icon {
+        display: flex;
+        align-items: center;
+        border: 1px solid #ced4da;
+        border-radius: 0;
+        background-color: #e9ecef;
+    }
+
+    .input-with-icon svg {
+        margin: 0 10px;
+        color: #6c757d;
+    }
+
+    .input-with-icon input {
+        width: 100%;
+        border: none;
+        padding: 10px;
+        background-color: white;
+        outline: none;
+    }
+
+    .input-with-icon input::placeholder {
+        color: #6c757d;
+    }
+
+    .input-with-icon input:focus {
+        outline: 2px solid #1a237e;
+        outline-offset: -2px;
+    }
+
+    .register-btn {
+        width: 100%;
+        padding: 12px;
+        background-color: #1a237e;
+        color: white;
+        border: none;
+        font-size: 1.1rem;
+        font-weight: 700;
+        cursor: pointer;
+        transition: background-color 0.2s ease-in-out;
+        margin-top: 10px;
+    }
+
+    .register-btn:hover {
+        background-color: #141b63;
+    }
+
+    .login {
+        text-align: center;
+        margin-top: 20px;
+    }
+
+    .login a {
+        color: #1a237e;
+        text-decoration: none;
+        font-size: 0.9rem;
+    }
+
+    .login a:hover {
+        text-decoration: underline;
+    }
+
+    .message {
+        padding: 10px;
+        margin-bottom: 15px;
+        border-radius: 5px;
+        text-align: center;
+        font-weight: bold;
+    }
+
+    .error {
+        background-color: #f8d7da;
+        color: #721c24;
+        border: 1px solid #f5c6cb;
+    }
+
+    .success {
+        background-color: #d4edda;
+        color: #155724;
+        border: 1px solid #c3e6cb;
+    }
+
+    /* Responsive design */
+     @media (max-width: 768px) {
+            .registration-container {
+                flex-direction: column-reverse;
+                width: 90%;
+                height: auto;
+                max-width: none;
+                border-radius: 10px;
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
+            .registration-right, .registration-left {
+                min-height: auto;
+                width: 100%;
+                padding: 40px 20px;
+            }
+            .registration-form-box {
+                max-width: 100%;
+            }
         }
 
-        button {
-            width: 100%;
-            padding: 12px;
-            background: #0056b3;
-            border: none;
-            border-radius: 6px;
-            color: #fff;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: background 0.2s;
-        }
+    </style> 
 
-        button:hover {
-            background: #003d80;
-        }
-
-        p {
-            text-align: center;
-            margin-top: 15px;
-        }
-
-        a {
-            color: #0056b3;
-            text-decoration: none;
-            font-weight: bold;
-        }
-
-        a:hover {
-            text-decoration: underline;
-        }
-
-        .error {
-            color: red;
-            text-align: center;
-            margin-bottom: 15px;
-        }
-    </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Create an Account</h2>
+     <div class="registration-container">
+        <div class="registration-right">
+            <div class="registration-form-box">
+                <h2>Create an Account</h2>
+                
+                <?php if ($error): ?>
+                    <div class="message error">
+                        <?php echo $error; ?>
+                    </div>
+                <?php endif; ?>
 
-        <?php if (!empty($error)): ?>
-            <p class="error"><?php echo $error; ?></p>
-        <?php endif; ?>
+                <p>Please select your role</p>
+                <form action="registration.php" method="POST">
+                    <div class="role-selection">
+                        <input type="radio" id="admin" name="role" value="admin" required>
+                        <label for="admin">ADMIN</label>
+                        <input type="radio" id="staff" name="role" value="staff">
+                        <label for="staff">STAFF</label>
+                        <input type="radio" id="head" name="role" value="head">
+                        <label for="head">HEAD</label>
+                    </div>
 
-        <form method="POST">
-            <label>Full Name</label>
-            <input type="text" name="fullName" required>
+                    <div class="form-group">
+                        <label for="username">USERNAME</label>
+                        <div class="input-with-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 8a3 3 0 1 0 0-6 3 3 0 0 0 0 6m2-3a2 2 0 1 1-4 0 2 2 0 0 1 4 0m4 8c0 1-1 1-1 1H3s-1 0-1-1 1-4 6-4 6 3 6 4m-1-.004c-.001-.246-.154-.986-.832-1.664C11.516 10.685 10.567 10 8 10s-3.516.685-4.168 1.332c-.678.678-.83 1.418-.832 1.664z"/>
+                            </svg>
+                            <input type="text" id="username" name="username" placeholder="Type your username" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="email">EMAIL</label>
+                        <div class="input-with-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M0 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H2a2 2 0 0 1-2-2zm2-1a1 1 0 0 0-1 1v.217l7 4.2 7-4.2V4a1 1 0 0 0-1-1zm13 1v.76L8.14 9.172a.5.5 0 0 1-.284 0L1 4.76V4a1 1 0 0 1 1-1h12a1 1 0 0 1 1 1"/>
+                            </svg>
+                            <input type="email" id="email" name="email" placeholder="Type your Email" required>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="password">PASSWORD</label>
+                        <div class="input-with-icon">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 1a2 2 0 0 1 2 2v4H6V3a2 2 0 0 1 2-2m3 6V3a3 3 0 1 0-6 0v4a1 1 0 0 0-1 1v2a2 2 0 0 0 2 2v2a.5.5 0 0 0 1 0v-2a2 2 0 0 0 2-2V8a1 1 0 0 0-1-1M5.5 8.5a.5.5 0 0 1 1 0v2a.5.5 0 0 1-1 0z"/>
+                            </svg>
+                            <input type="password" id="password" name="password" placeholder="Type your password" required>
+                        </div>
+                    </div>
+                    <button type="submit" class="register-btn">REGISTER</button>
+                </form>
+                <div class="login">
+                    <a href="login.php">Already have an account? Sign In</a>
+                </div>
+            </div>
+        </div>
 
-            <label>Email</label>
-            <input type="email" name="email" required>
-
-            <label>Password</label>
-            <input type="password" name="password" required>
-
-            <label>Confirm Password</label>
-            <input type="password" name="confirmPassword" required>
-
-            <label>Role</label>
-            <select name="role" required>
-                <option value="staff">Staff</option>
-                <option value="office_head">Office Head</option>
-                <option value="admin">Admin</option>
-            </select>
-
-            <button type="submit" name="submit">Register</button>
-        </form>
-
-        <p>Already have an account? <a href="login.php">Login here</a></p>
+        <div class="registration-left">
+            <h1>SOCIAL DEVELOPMENT UNIT</h1>
+        </div>
     </div>
 </body>
 </html>
